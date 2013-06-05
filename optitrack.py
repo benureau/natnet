@@ -2,14 +2,7 @@ import socket
 import struct
 import time
 
-byteorder='@'
-
-port = 1511
-addr      = '239.255.42.99'
-interface = '10.211.55.3'
-
 from toolbox import gfx
-
 
 sizeref = {
     'h': 2,
