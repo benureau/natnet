@@ -93,11 +93,7 @@ class NatNetFrame(object):
         ## markers ##
         n_imarkersets = self._read('i')
         for _ in range(n_imarkersets):
-            setname = self._unpack_name()
-
-            n_markers = self._read('i') # number of marker in the set
-            positions = tuple(self._read('fff') for _ in range(n_markers))
-
+            setname, positions = self._unpack_imarkerset()
             dd['markersets'][setname] = positions
 
         n_umarkers = self._read('i') # number of unidentified markers
@@ -110,12 +106,7 @@ class NatNetFrame(object):
 
         ## skeletons ##
         n_skeletons = self._read('i')
-        dd['skeletons'] = []
-        for _ in range(n_skeletons):
-            skd['id']  = self._read('i')
-            n_skrb     = self._read('i') # number of rigid bodies in the skeleton
-            skd['rbs'] = tuple(self._unpack_rb() for _ in range(n_skrb))
-            dd['skeletons'].append(skd)
+        dd['skeletons'] = tuple(self._unpack_skeleton() for _ in range(n_skeletons))
 
         ## labeled markers ##
         n_labeledmarkers = self._read('i')
@@ -144,6 +135,17 @@ class NatNetFrame(object):
 
         return name
 
+
+    def _unpack_imarkerset(self):
+        """ Unpack a marker set"""
+        setname = self._unpack_name()
+
+        n_markers = self._read('i') # number of marker in the set
+        positions = tuple(self._read('fff') for _ in range(n_markers))
+
+        return setname, positions
+
+
     def _unpack_rb(self):
         """ Unpack a rigid body.
 
@@ -168,6 +170,7 @@ class NatNetFrame(object):
 
         return rbd
 
+
     def _unpack_lb_marker(self):
         """ Unpack a labeled marker.
 
@@ -179,6 +182,14 @@ class NatNetFrame(object):
         lbd['size']     = self._read('f')
 
         return lbd
+
+
+    def _unpack_skeleton(self):
+        skd = {}
+        skd['id']  = self._read('i')
+        n_skrb     = self._read('i') # number of rigid bodies in the skeleton
+        skd['rbs'] = tuple(self._unpack_rb() for _ in range(n_skrb))
+        return skd
 
 
     def _unpack_rbdesc(self):
