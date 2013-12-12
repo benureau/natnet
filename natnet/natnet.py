@@ -4,7 +4,7 @@ import time
 
 from toolbox import gfx
 
-sizeref = {
+_sizeref = {
     'h': 2,
     'i': 4,
     'I': 4,
@@ -61,7 +61,7 @@ class NatNetFrame(object):
             :param update_offset:
         """
         if size is None:
-            size = sum(sizeref[e] for e in fmt)
+            size = sum(_sizeref[e] for e in fmt)
         assert self._offset + size <= len(self._data)
         u_data = struct.unpack(self.byteorder+fmt, self._data[self._offset:self._offset+size])
         if update_offset:
@@ -84,7 +84,7 @@ class NatNetFrame(object):
 
         dd['frame_number'] = self._read('i')
 
-        dd['markersets'] = [] # identified markers sets
+        dd['markersets'] = {} # identified markers sets
         dd['u_markers']  = [] # unidentified markers
         dd['rbs']        = [] # rigid bodies
         dd['skeletons']  = [] # ibit
@@ -98,7 +98,7 @@ class NatNetFrame(object):
             n_markers = self._read('i') # number of marker in the set
             positions = tuple(self._read('fff') for _ in range(n_markers))
 
-            dd['markersets'].append((setname, positions))
+            dd['markersets'][setname] = positions
 
         n_umarkers = self._read('i') # number of unidentified markers
         for _ in range(n_umarkers):
@@ -143,7 +143,6 @@ class NatNetFrame(object):
         self._offset += 1 # C zero char
 
         return name
-
 
     def _unpack_rb(self):
         """ Unpack a rigid body.
@@ -284,5 +283,6 @@ if __name__ == '__main__':
         os.system('clear')
         frame = nnclient.receive_frame()
         data = frame.unpack_data()
-        print pp(data['markersets'])
+        #print pp(data['markersets'])
+        print pp(data)
         time.sleep(0.01)
