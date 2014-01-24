@@ -81,6 +81,9 @@ class FrameBuffer(threading.Thread):
     def stop_tracking(self):
         self._track_id = None
 
+    def purge_tracking(self):
+        self.track_data = deque()
+
     def tracking_period(self, start, end):
         tdata = []
         for ts, p in self.trackdata:
