@@ -286,14 +286,3 @@ def _pp(d, ident = 0, keys = None):
     return str(d)
 
 
-if __name__ == '__main__':
-    nnclient = NatNetClient()
-    #print data
-    import os
-    while True:
-        os.system('clear')
-        frame = nnclient.receive_frame()
-        data = frame.unpack_data()
-        #print pp(data['markersets'])
-        print pp(data)
-        time.sleep(0.01)
