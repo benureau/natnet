@@ -18,7 +18,10 @@ class FrameBuffer(threading.Thread):
         self.timespan = timespan
 
         self.frames = deque()
+        self.trackdata = deque()
         self.framecount = 0 # frame from the start.
+
+        self._track_id = None
 
         def cleanup():
             self.stop()
@@ -26,8 +29,6 @@ class FrameBuffer(threading.Thread):
         atexit.register(cleanup)
 
         self.start()
-
-
 
     def stop(self):
         """Stop the thread after the end of the current loop"""
@@ -43,12 +44,19 @@ class FrameBuffer(threading.Thread):
     def stopped(self):
         return self._stop.isSet()
 
+
     def run(self):
         while not self.stopped():
 
             frame = self.nnclient.receive_frame()
-            self.frames.append((time.time(), frame))
+            timestamp = time.time()
+            self.frames.append((timestamp, frame.unpack_data()))
             self.framecount += 1
+
+            if self._track_id is not None:
+                for lbm in self.frames[-1][1]['lb_markers']:
+                    if lbm['id'] == self._track_id:
+                        self.trackdata.append((timestamp, lbm['position']))
 
             if self.framecount % 10 == 0:
                 timestamp, frame = self.frames[0]
@@ -57,3 +65,35 @@ class FrameBuffer(threading.Thread):
                     timestamp, frame = self.frames[0]
             time.sleep(0.001)
 
+    def track_only(self):
+        """ If only one marker is present, track it.
+            Else, raise ValueError.
+        """
+        if len(self.frames) == 0:
+            time.sleep(0.01)
+        last_frame = self.frames[-1][1]
+        if len(last_frame['u_markers']) == len(last_frame['lb_markers']) == 1:
+            self._track_id = last_frame['lb_markers'][0]['id']
+        else:
+            self._track_id = None
+            raise ValueError
+
+    def stop_tracking(self):
+        self._track_id = None
+
+    def tracking_period(self, start, end):
+        tdata = []
+        for ts, p in self.trackdata:
+            if ts < start:
+                break
+            elif ts < end:
+                tdata.append((ts, p))
+        return tdata
+
+    def track_nearest(self, p, exclusion=2.0):
+        """ Track the nearest marker of p across frames
+
+            :param exclusion: how much times farther other markers must be
+                              from p than the closest one
+        """
+        raise NotImplementedError
