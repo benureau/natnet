@@ -87,10 +87,10 @@ class FrameBuffer(threading.Thread):
     def tracking_period(self, start, end):
         tdata = []
         for ts, p in self.trackdata:
-            if ts < start:
-                break
-            elif ts < end:
+            if start < ts < end:
                 tdata.append((ts, p))
+            #if start > ts:
+            #    break
         return tdata
 
     def track_nearest(self, p, exclusion=2.0):
