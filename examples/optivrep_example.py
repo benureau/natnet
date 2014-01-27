@@ -25,7 +25,7 @@ def main(move_time=10.0):
     end = time.time()
     trajectory = fb.tracking_period(start, end)
     
-    ovar = OptiVrepAR()
+    ovar = optivrepar.OptiVrepAR()
     ovar.execute(trajectory)
 
 if __name__ == '__main__':
