@@ -7,14 +7,14 @@ from . import natnet
 
 class FrameBuffer(threading.Thread):
 
-    def __init__(self, timespan, nnclient = None):
+    def __init__(self, timespan, nnclient = None, addr= '239.255.42.99', port = 1511):
         threading.Thread.__init__(self)
         self.daemon = True
         self._stop = threading.Event()
 
         self.nnclient = nnclient
         if self.nnclient is None:
-            self.nnclient = natnet.NatNetClient()
+            self.nnclient = natnet.NatNetClient(addr=addr, port=port)
         self.timespan = timespan
 
         self.frames = deque()
