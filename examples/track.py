@@ -1,11 +1,15 @@
-import time
+import time, sys
 import numpy as np
 
 import env
 from natnet import FrameBuffer
 
-fb = FrameBuffer(1.0)
-fb.track_only()
+addr = '239.255.42.99'
+if len(sys.argv) > 1:
+    addr = addr[:-len(sys.argv[1])] + sys.argv[1]
+
+fb = FrameBuffer(1.0, addr=addr)
+fb.track()
 start = time.time()
 time.sleep(1.2)
 fb.stop_tracking()

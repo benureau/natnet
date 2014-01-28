@@ -5,6 +5,10 @@ import atexit
 
 from . import natnet
 
+kLeft  =  1
+kAny   =  0
+kRight = -1
+
 class FrameBuffer(threading.Thread):
 
     def __init__(self, timespan, nnclient = None, addr= '239.255.42.99', port = 1511):
@@ -21,7 +25,9 @@ class FrameBuffer(threading.Thread):
         self.trackdata = deque()
         self.framecount = 0 # frame from the start.
 
-        self._track_id = None
+        self._tracking   = False
+        self._track_side = kLeft
+        self._dual_track = False
 
         def cleanup():
             self.stop()
@@ -53,10 +59,8 @@ class FrameBuffer(threading.Thread):
             self.frames.append((timestamp, frame.unpack_data()))
             self.framecount += 1
 
-            if self._track_id is not None:
-                for lbm in self.frames[-1][1]['lb_markers']:
-                    if lbm['id'] == self._track_id:
-                        self.trackdata.append((timestamp, lbm['position']))
+            if self._tracking:
+                self.trackdata.append((timestamp, self._tracker_pos()))
 
             if self.framecount % 10 == 0:
                 timestamp, frame = self.frames[0]
@@ -65,26 +69,60 @@ class FrameBuffer(threading.Thread):
                     timestamp, frame = self.frames[0]
             time.sleep(0.001)
 
-    def track_only(self):
+    def _tracker_pos(self):
+        if len(self.frames) == 0:
+            raise IOError("no frames in buffer")
+
+        u_ms = self.frames[-1][1]['u_markers']
+
+        if self._track_side == kLeft:
+            u_ms_side = [u for u in u_ms if u[0] >= 0]
+        elif self._track_side == kRight:
+            u_ms_side = [u for u in u_ms if u[0] < 0]
+        else:
+            u_ms_side = u_ms
+
+        if len(u_ms_side) > 1:
+            raise ValueError("expected at maximum one marker, got more ({}: {})".format(len(u_ms_side), u_ms_side))
+        if len(u_ms_side) == 1:
+            return u_ms_side[0]
+        if len(u_ms_side) == 0:
+            return None
+
+
+    def _track(self):
+        if len(self.frames) == 0:
+            time.sleep(0.01)
+        if self._tracker_pos() is None:
+            raise ValueError('no marker detected')
+
+        self._tracking = True
+
+    def track(self):
+        self._track_side = kAny
+        self._track()
+
+    def track_left(self):
         """ If only one marker is present, track it.
             Else, raise ValueError.
         """
-        if len(self.frames) == 0:
-            time.sleep(0.01)
-        last_frame = self.frames[-1][1]
-        if len(last_frame['u_markers']) == len(last_frame['lb_markers']) == 1:
-            self._track_id = last_frame['lb_markers'][0]['id']
-        else:
-            self._track_id = None
-            raise ValueError
+        self._track_side = kLeft
+        self._track()
+
+    def track_right(self):
+        """ If only one marker is present, track it.
+            Else, raise ValueError.
+        """
+        self._track_side = kRight
+        self._track()
 
     def stop_tracking(self):
-        self._track_id = None
+        self._tracking = False
 
     def purge_tracking(self):
         self.track_data = deque()
 
-    def tracking_period(self, start, end):
+    def tracking_slice(self, start, end):
         tdata = []
         for ts, p in self.trackdata:
             if start < ts < end:
