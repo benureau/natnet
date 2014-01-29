@@ -14,7 +14,7 @@ class MarkerError(Exception):
 
 class FrameBuffer(threading.Thread):
 
-    def __init__(self, timespan, nnclient = None, addr= '239.255.42.99', port = 1511):
+    def __init__(self, timespan, nnclient = None, addr= '239.255.42.99', port = 1511, raise_to_exc_info=False):
         threading.Thread.__init__(self)
         self.daemon = True
         self._stop = threading.Event()
@@ -37,6 +37,7 @@ class FrameBuffer(threading.Thread):
             self.join(0.2)
         atexit.register(cleanup)
 
+        self.exc_info = False
         self.start()
 
     def stop(self):
@@ -55,21 +56,25 @@ class FrameBuffer(threading.Thread):
 
 
     def run(self):
-        while not self.stopped():
-            frame = self.nnclient.receive_frame()
-            timestamp = time.time()
-            self.frames.append((timestamp, frame.unpack_data()))
-            self.framecount += 1
+        try:
+            while not self.stopped():
+                frame = self.nnclient.receive_frame()
+                timestamp = time.time()
+                self.frames.append((timestamp, frame.unpack_data()))
+                self.framecount += 1
 
-            if self._tracking:
-                self.trackdata.append((timestamp, self._tracker_pos()))
+                if self._tracking:
+                    self.trackdata.append((timestamp, self._tracker_pos()))
 
-            if self.framecount % 10 == 0:
-                timestamp, frame = self.frames[0]
-                while time.time() - timestamp > self.timespan:
-                    self.frames.popleft()
+                if self.framecount % 10 == 0:
                     timestamp, frame = self.frames[0]
-            time.sleep(0.001)
+                    while time.time() - timestamp > self.timespan:
+                        self.frames.popleft()
+                        timestamp, frame = self.frames[0]
+                time.sleep(0.001)
+        except Exception, e:
+            import sys
+            self.exc_info = sys.exc_info()
 
     def _tracker_pos(self):
         if len(self.frames) == 0:
@@ -97,8 +102,6 @@ class FrameBuffer(threading.Thread):
             time.sleep(0.01)
         if self._tracker_pos() is None:
             raise MarkerError('no marker detected')
-class MarkerError(Exception):
-    pass
 
         self._tracking = True
 
@@ -127,6 +130,9 @@ class MarkerError(Exception):
         self.track_data = deque()
 
     def tracking_slice(self, start, end):
+        if self.exc_info:
+            raise self.exc_info[1], None, self.exc_info[2]
+
         tdata = []
         for ts, p in self.trackdata:
             if start < ts < end:
