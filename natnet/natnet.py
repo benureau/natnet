@@ -12,6 +12,7 @@ _sizeref = {
     's': 1,
 }
 
+
 class NatNetClient(object):
 
     def __init__(self, addr= '239.255.42.99', port = 1511, buff_size = 100000, byteorder = '@'):
@@ -22,7 +23,7 @@ class NatNetClient(object):
 
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self._sock.bind(('', port))
+        self._sock.bind((addr, port))
         mreq = struct.pack("4sl", socket.inet_aton(addr), socket.INADDR_ANY)
         self._sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
