@@ -9,6 +9,9 @@ kLeft  =  1
 kAny   =  0
 kRight = -1
 
+class MarkerError(Exception):
+    pass
+
 class FrameBuffer(threading.Thread):
 
     def __init__(self, timespan, nnclient = None, addr= '239.255.42.99', port = 1511):
@@ -53,7 +56,6 @@ class FrameBuffer(threading.Thread):
 
     def run(self):
         while not self.stopped():
-
             frame = self.nnclient.receive_frame()
             timestamp = time.time()
             self.frames.append((timestamp, frame.unpack_data()))
@@ -83,7 +85,7 @@ class FrameBuffer(threading.Thread):
             u_ms_side = u_ms
 
         if len(u_ms_side) > 1:
-            raise ValueError("expected at maximum one marker, got more ({}: {})".format(len(u_ms_side), u_ms_side))
+            raise MarkerError("expected at maximum one marker, got more ({}: {})".format(len(u_ms_side), u_ms_side))
         if len(u_ms_side) == 1:
             return u_ms_side[0]
         if len(u_ms_side) == 0:
@@ -94,12 +96,14 @@ class FrameBuffer(threading.Thread):
         if len(self.frames) == 0:
             time.sleep(0.01)
         if self._tracker_pos() is None:
-            raise ValueError('no marker detected')
+            raise MarkerError('no marker detected')
+class MarkerError(Exception):
+    pass
 
         self._tracking = True
 
-    def track(self):
-        self._track_side = kAny
+    def track(self, side='any'):
+        self._track_side = {'any': kAny, 'left':kLeft, 'right':kRight}[side]
         self._track()
 
     def track_left(self):
