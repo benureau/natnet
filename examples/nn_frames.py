@@ -17,4 +17,4 @@ while True:
     data = frame.unpack_data()
     if c % 10 == 0:
         os.system('clear')
-        print natnet.pp(data)
+        print("from {}:{}\n{}".format(nnclient.addr, nnclient.port, natnet.pp(data)))
