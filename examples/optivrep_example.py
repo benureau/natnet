@@ -27,6 +27,7 @@ def main(move_time=10.0):
     
     ovar = optivrepar.OptiVrepAR()
     ovar.execute(trajectory)
+    ovar.close()
 
 if __name__ == '__main__':
     main()
