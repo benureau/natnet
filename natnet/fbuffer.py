@@ -5,9 +5,14 @@ import atexit
 
 from . import natnet
 
-kLeft  =  1
-kAny   =  0
-kRight = -1
+kLeft        =  1
+kAny         =  0
+kRight       = -1
+kUpperLeft   = 10
+kUpperRight  = 11
+kBottomLeft  = 12
+kBottomRight = 13
+
 
 class MarkerError(Exception):
     pass
@@ -86,6 +91,15 @@ class FrameBuffer(threading.Thread):
             u_ms_side = [u for u in u_ms if u[0] >= 0]
         elif self._track_side == kRight:
             u_ms_side = [u for u in u_ms if u[0] < 0]
+        #CRAP CODE
+        elif self._track_side == kUpperLeft:
+            u_ms_side = [u for u in u_ms if u[0] >= 0 and u[1] >= 0]
+        elif self._track_side == kUpperRight:
+            u_ms_side = [u for u in u_ms if u[0]  < 0 and u[1] >= 0]
+        elif self._track_side == kBottomLeft:
+            u_ms_side = [u for u in u_ms if u[0] >= 0 and u[1]  < 0]
+        elif self._track_side == kBottomRight:
+            u_ms_side = [u for u in u_ms if u[0]  < 0 and u[1]  < 0]
         else:
             u_ms_side = u_ms
 
@@ -106,7 +120,9 @@ class FrameBuffer(threading.Thread):
         self._tracking = True
 
     def track(self, side='any'):
-        self._track_side = {'any': kAny, 'left':kLeft, 'right':kRight}[side]
+        self._track_side = {'any': kAny, 'left':kLeft, 'right':kRight,
+                            'upper.left':kUpperLeft, 'upper.right':kUpperRight,
+                            'bottom.left':kBottomLeft, 'bottom.right':kBottomRight}[side]
         self._track()
 
     def track_left(self):
