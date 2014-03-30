@@ -9,8 +9,8 @@ Copyright (c) 2014 __MyCompanyName__. All rights reserved.
 import time
 import numpy as np
 
-from surrogates.vrepsim import vrepcom
-from surrogates.stemsim import optivrepar
+from dovecot.vrepsim import vrepcom
+from dovecot.stemsim import optivrepar
 
 import env
 from natnet import FrameBuffer
