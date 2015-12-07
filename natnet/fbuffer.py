@@ -143,7 +143,8 @@ class FrameBuffer(threading.Thread):
         self._tracking = False
 
     def purge_tracking(self):
-        self.track_data = deque()
+        self.frames    = deque()
+        self.trackdata = deque()
 
     def tracking_slice(self, start, end):
         if self.exc_info:
